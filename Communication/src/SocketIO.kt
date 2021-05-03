@@ -2,66 +2,65 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.PrintWriter
+import java.lang.Exception
 import java.net.Socket
 import kotlin.concurrent.thread
 
 class SocketIO(private val socket: Socket) {
+
     private var stop = false
-    private var thread: Thread? = null
-    private val socketClosedListeners = mutableListOf<() -> Unit>()
 
-    fun addSocketClosedListener(l: () -> Unit){
-        socketClosedListeners.add(l)
+    private val socketClosedListener = mutableListOf<()->Unit>()
+    fun addSocketClosedListener(l: ()->Unit){
+        socketClosedListener.add(l)
+    }
+    fun removeSocketClosedListener(l: ()->Unit){
+        socketClosedListener.remove(l)
+    }
+    private val messageListeners = mutableListOf<(String)-> Unit>()
+    fun addMessageListener(l:(String)-> Unit){
+        messageListeners.add(l)
+    }
+    fun removeMessageListener(l:(String)-> Unit){
+        messageListeners.remove(l)
     }
 
-    fun removeSocketClosedListener(l: () -> Unit){
-        socketClosedListeners.remove(l)
-    }
-
-    fun stop() {
+    fun stop(){
         stop = true
         socket.close()
     }
 
     fun startDataReceiving() {
         stop = false
-        stopAll = false
-        val br = BufferedReader(InputStreamReader(socket.getInputStream()))
-        thread = thread {
-            try{
-                while (!stop && !stopAll) {
+        thread{
+            try {
+                val br = BufferedReader(InputStreamReader(socket.getInputStream()))
+                while (!stop) {
                     val data = br.readLine()
-                    if (data != null){
-                        println(data) //TODO
-                    }else{
-                        throw IOException("Connection Failed")
+                    if (data!=null)
+                        messageListeners.forEach { l -> l(data) }
+                    else {
+                        throw IOException("Связь прервалась")
                     }
                 }
-                socket.close()
-            }catch (e: Exception){
-                socket.close()
-                socketClosedListeners.forEach { it() }
-                println(e.message)
+            } catch (ex: Exception){
+                messageListeners.forEach { l -> ex.message?.let { l(it) } }
             }
-
+            finally {
+                socket.close()
+                socketClosedListener.forEach{it()}
+            }
         }
     }
 
     fun send(data: String): Boolean{
-        return try{
+        return try {
             val pw = PrintWriter(socket.getOutputStream())
             pw.println(data)
-            pw.flush() // Очистка буфера
+            pw.flush()
             true
-        }catch (e: Exception){
+        } catch (ex: Exception){
             false
-        }
-    }
-
-    companion object{
-        private var stopAll = false
-        fun stopAll(){
-            stopAll = true
         }
     }
 }
