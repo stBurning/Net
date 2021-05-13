@@ -10,7 +10,6 @@
  * Если разная информация то пересчитываем с другими клиентами
  *
  * */
-import java.awt.FlowLayout
 import java.awt.TextArea
 import java.awt.TextField
 import javax.swing.GroupLayout
@@ -37,39 +36,49 @@ class ClientWindow(title: String) : JFrame() {
 
         val btn = JButton("Send")
         btn.addActionListener {
-            textArea.append("Я: ${textField.text}")
+            textArea.append("Я: ${textField.text}\n")
             client.send(textField.text)
         }
         val mainPanel = JPanel()
-        val layout = GroupLayout(mainPanel)
-        layout.setVerticalGroup(layout.createSequentialGroup()
-            .addGap(10)
-            .addComponent(textArea,GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
-            .addGap(10)
-            .addGroup(layout.createParallelGroup()
-                .addComponent(textField, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
-                .addComponent(btn,  GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
-            )
+        val gl = GroupLayout(mainPanel)
+        gl.setVerticalGroup(
+            gl.createSequentialGroup()
+                .addGap(4)
+                .addComponent(textArea, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE)
+                .addGap(4)
+                .addGroup(
+                    gl.createParallelGroup()
+                        .addComponent(textField)
+                        .addGap(5)
+                        .addComponent(btn)
+                )
+                .addGap(4)
         )
-        layout.setHorizontalGroup(layout.createSequentialGroup()
-            .addGap(20)
-
-            .addGroup(  layout.createParallelGroup()
+        gl.setHorizontalGroup(
+            gl.createParallelGroup()
                 .addComponent(textArea)
-                .addComponent(textField)
-                .addComponent(btn))
-            .addGap(20))
+                .addGap(5)
+                .addGroup(
+                    gl.createSequentialGroup()
+                        .addComponent(textField)
+                        .addGap(5)
+                        .addComponent(btn)
+                )
+
+        )
+
+
         mainPanel.add(textArea)
         mainPanel.add(textField)
         mainPanel.add(btn)
-        mainPanel.layout = layout
+        mainPanel.layout = gl
         add(mainPanel)
         pack()
 
         client.addSessionFinishedListener {
-            textArea.append("Работа с сервером завершена. Нажмите Enter для выхода...")
+            textArea.append("Работа с сервером завершена. Нажмите Enter для выхода...\n")
             exitProcess(0)
         }
-        client.addMessageListener { textArea.append(it) }
+        client.addMessageListener { textArea.append(it+"\n") }
     }
 }
